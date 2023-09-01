@@ -1,6 +1,7 @@
 ﻿using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+
 namespace Warehouse
 {
     internal class Program
@@ -44,22 +45,22 @@ namespace Warehouse
 
                     if(isDataNotCtreated.ToLower() == "y")
                     {
-                        string insertTypeQuery = "INSERT INTO TypesOfProducts (Name) VALUES ('Тип 1'), ('Тип 2'), ('Тип 3')";
+                        string insertTypeQuery = "INSERT INTO TypesOfProducts (Name) VALUES ('Type 1'), ('Type 2'), ('Type 3')";
                         using (SqlCommand cmd = new SqlCommand(insertTypeQuery, conn))
                         {
                             cmd.ExecuteNonQuery();
                         }
 
-                        string insertManufacturerQuery = "INSERT INTO Manufacturers (Name) VALUES ('Постачальник 1'), ('Постачальник 2'), ('Постачальник 3')";
+                        string insertManufacturerQuery = "INSERT INTO Manufacturers (Name) VALUES ('Manufacturer 1'), ('Manufacturer 2'), ('Manufacturer 3')";
                         using (SqlCommand cmd = new SqlCommand(insertManufacturerQuery, conn))
                         {
                             cmd.ExecuteNonQuery();
                         }
 
                         string insertProductQuery = "INSERT INTO Products (Name, TypeID, ManufacturerID, Number, CostPrice, Date) VALUES " +
-                                                    "('Товар 1', 1, 1, 100, 10, '2023-08-01'), " +
-                                                    "('Товар 2', 2, 2, 150, 15, '2023-08-02'), " +
-                                                    "('Товар 3', 1, 1, 200, 8, '2023-08-03')";
+                                                    "('Product 1', (select top 1 id from TypesOfProducts where Name='Type 1'), (select top 1 id from Manufacturers where Name='Manufacturer 2'), 100, 10, '2023-08-01'), " +
+                                                    "('Product 2', (select top 1 id from TypesOfProducts where Name='Type 3'), (select top 1 id from Manufacturers where Name='Manufacturer 1'), 150, 15, '2023-08-02'), " +
+                                                    "('Product 3', (select top 1 id from TypesOfProducts where Name='Type 2'), (select top 1 id from Manufacturers where Name='Manufacturer 3'), 200, 8, '2023-08-03')";
                         using (SqlCommand cmd = new SqlCommand(insertProductQuery, conn))
                         {
                             cmd.ExecuteNonQuery();
@@ -82,6 +83,25 @@ namespace Warehouse
                         Console.WriteLine("5 - Показати товар з мiнiмальною кiлькiстю");
                         Console.WriteLine("6 - Показати товар з мiнiмальною собiвартiстю");
                         Console.WriteLine("7 - Показати товар з максимальною собiвартiстю");
+                        Console.WriteLine();
+                        Console.WriteLine("8 - Додати новий товар");
+                        Console.WriteLine("9 - Додати новий тип товару");
+                        Console.WriteLine("10 - Додати нового постачальника");
+                        Console.WriteLine();
+                        Console.WriteLine("11 - Оновити iснуючий товар");
+                        Console.WriteLine("12 - Оновити iснуючий тип товару");
+                        Console.WriteLine("13 - Оновити iснуючого постачальника");
+                        Console.WriteLine();
+                        Console.WriteLine("14 - Видалити iснуючий товар");
+                        Console.WriteLine("15 - Видалити iснуючий тип товару");
+                        Console.WriteLine("16 - Видалити iснуючого постачальника");
+                        Console.WriteLine();
+                        Console.WriteLine("17 - Показати iнформацiю про постачальника, в якого кiлькiсть товарiв на складi найбiльша");
+                        Console.WriteLine("18 - Показати iнформацiю про постачальника, в якого кiлькiсть товарiв на складi найменша");
+                        Console.WriteLine("19 - Показати iнформацiю про тип товару з найбiльшою кiлькiстю товарiв на складi");
+                        Console.WriteLine("20 - Показати iнформацiю про тип товару з найменшою кiлькiстю товарiв на складi");
+                        Console.WriteLine("21 - Показати товари, з постачання яких минула задана кiлькiсть днiв");
+                        Console.WriteLine();
                         Console.WriteLine("0 - Вихiд");
 
                         choice = int.Parse(Console.ReadLine());
@@ -104,7 +124,7 @@ namespace Warehouse
                                 Console.Clear();
                                 query = "select * from Manufacturers";
                                 GetData(query, ds, conn);
-                                DisplaySuppliers(ds.Tables[0]);
+                                DisplayManufacturers(ds.Tables[0]);
                                 break;
                             case 4:
                                 Console.Clear();
@@ -130,10 +150,92 @@ namespace Warehouse
                                 GetData(query, ds, conn);
                                 DisplayProducts(ds.Tables[0]);
                                 break;
+                            case 8:
+                                Console.Clear();
+                                AddNewProduct(conn);
+                                break;
+                            case 9:
+                                Console.Clear();
+                                AddNewProductType(conn);
+                                break;
+                            case 10:
+                                Console.Clear();
+                                AddNewProductManufacturer(conn);
+                                break;
+                            case 11:
+                                Console.Clear();
+                                UpdateProduct(conn);
+                                break;
+                            case 12:
+                                Console.Clear();
+                                UpdateProductType(conn);
+                                break;
+                            case 13:
+                                Console.Clear();
+                                UpdateManufacturer(conn);
+                                break;
+                            case 14:
+                                Console.Clear();
+                                DeleteProduct(conn);
+                                break;
+                            case 15:
+                                Console.Clear();
+                                DeleteProductType(conn);
+                                break;
+                            case 16:
+                                Console.Clear();
+                                DeleteManufacturer(conn);
+                                break;
+                            case 17:
+                                Console.Clear();
+                                query = "SELECT top 1 M.Name AS Manufacturer, SUM(P.Number) AS TotalQuantity " +
+                                    "FROM Manufacturers M " +
+                                    "JOIN Products P ON M.ID = P.ManufacturerID " +
+                                    "GROUP BY M.Name ORDER BY TotalQuantity DESC";
+                                GetData(query, ds, conn);
+                                DisplayManufacturerQuantity(ds.Tables[0]);
+                                break;
+                            case 18:
+                                Console.Clear();
+                                query = "SELECT top 1 M.Name AS Manufacturer, SUM(P.Number) AS TotalQuantity " +
+                                    "FROM Manufacturers M " +
+                                    "JOIN Products P ON M.ID = P.ManufacturerID " +
+                                    "GROUP BY M.Name ORDER BY TotalQuantity ASC";
+                                GetData(query, ds, conn);
+                                DisplayManufacturerQuantity(ds.Tables[0]);
+                                break;
+                            case 19:
+                                Console.Clear();
+                                query = "SELECT top 1 T.Name AS ProductType, SUM(P.Number) AS TotalQuantity " +
+                                    "FROM TypesOfProducts T " +
+                                    "JOIN Products P ON T.ID = P.TypeID " +
+                                    "GROUP BY T.Name ORDER BY TotalQuantity DESC";
+                                GetData(query, ds, conn);
+                                DisplayTypeQuantity(ds.Tables[0]);
+                                break;
+                            case 20:
+                                Console.Clear();
+                                query = "SELECT top 1 T.Name AS ProductType, SUM(P.Number) AS TotalQuantity " +
+                                    "FROM TypesOfProducts T " +
+                                    "JOIN Products P ON T.ID = P.TypeID " +
+                                    "GROUP BY T.Name ORDER BY TotalQuantity ASC";
+                                GetData(query, ds, conn);
+                                DisplayTypeQuantity(ds.Tables[0]);
+                                break;
+                            case 21:
+                                Console.Clear();
+                                Console.WriteLine("Введiть бажану кiлькiсть днiв");
+
+                                int days = int.Parse(Console.ReadLine());
+
+                                query = $"SELECT P.* FROM Products P WHERE DATEDIFF(DAY, P.Date, GETDATE()) > {days}";
+                                GetData(query, ds, conn);
+                                DisplayProducts(ds.Tables[0]);
+                                break;
                             case 0:
                                 break;
                             default:
-                                Console.WriteLine("Помилковий вибір!");
+                                Console.WriteLine("Помилковий вибiр!");
                                 break;
                         }
                     }
@@ -144,6 +246,205 @@ namespace Warehouse
             catch(Exception ex)
             {
                 Console.WriteLine(ex.Message);
+            }
+        }
+        static bool AddNewProduct(SqlConnection conn)
+        {
+            Console.WriteLine("Введiть назву нового товару");
+            string name = Console.ReadLine();
+
+            Console.WriteLine("Введiть тип нового товару");
+            string type = Console.ReadLine();
+
+            Console.WriteLine("Введiть постачальника нового товару");
+            string manufacturer = Console.ReadLine();
+
+            Console.WriteLine("Введiть кiлькiсть нового товару");
+            string number = Console.ReadLine();
+
+            Console.WriteLine("Введiть собiвартiсть нового товару");
+            string costPrice = Console.ReadLine();
+
+            Console.WriteLine("Введiть дату постачання нового товару");
+            string date = Console.ReadLine();
+
+            string query = $"insert into Products values ('{name}', (select top 1 id from TypesOfProducts where Name='{type}'), (select top 1 id from Manufacturers where Name='{manufacturer}'), {number}, {costPrice}, '{date}')";
+
+            return ExecuteCommand(query, conn);
+        }
+        static bool AddNewProductType(SqlConnection conn)
+        {
+            Console.WriteLine("Введiть новий тип товару");
+            string name = Console.ReadLine();
+
+            string query = $"insert into TypesOfProducts values ('{name}')";
+
+            return ExecuteCommand(query, conn);
+            
+        }
+        static bool AddNewProductManufacturer(SqlConnection conn)
+        {
+            Console.WriteLine("Введiть нового постачальника");
+            string name = Console.ReadLine();
+
+            string query = $"insert into Manufacturers values ('{name}')";
+
+            return ExecuteCommand(query, conn);
+
+        }
+        static bool UpdateProduct(SqlConnection conn)
+        {
+            Console.WriteLine("Введiть ID товару який хочете змiнити");
+            int id = int.Parse(Console.ReadLine());
+
+            string query = "";
+
+            Console.WriteLine("Щоб НЕ змiнювати поточне значення натискайте Enter\n");
+            Console.Write("Назва товару:");
+
+            string answer = "";
+            answer = Console.ReadLine();
+            if(answer != "")
+            {
+                query = $"update Products Set Name = '{answer}' where ID = {id}";
+                if(ExecuteCommand(query, conn) == false)
+                {
+                    return false;
+                }
+            }
+
+            Console.Write("Тип товару:");
+
+            answer = "";
+            answer = Console.ReadLine();
+            if (answer != "")
+            {
+                query = $"update Products Set TypeID = (select top 1 ID from TypesOfProducts where Name='{answer}') where ID = {id}";
+                if (ExecuteCommand(query, conn) == false)
+                {
+                    return false;
+                }
+            }
+
+            Console.Write("Постачальник товару:");
+
+            answer = "";
+            answer = Console.ReadLine();
+            if (answer != "")
+            {
+                query = $"update Products Set ManufacturerID = (select top 1 ID from Manufacturers where Name='{answer}') where ID = {id}";
+                if (ExecuteCommand(query, conn) == false)
+                {
+                    return false;
+                }
+            }
+
+            Console.Write("Кiлькiсть товару:");
+
+            answer = "";
+            answer = Console.ReadLine();
+            if (answer != "")
+            {
+                query = $"update Products Set Number = {int.Parse(answer)} where ID = {id}";
+                if (ExecuteCommand(query, conn) == false)
+                {
+                    return false;
+                }
+            }
+
+            Console.Write("Собiвартiсть товару:");
+
+            answer = "";
+            answer = Console.ReadLine();
+            if (answer != "")
+            {
+                query = $"update Products Set CostPrice = {int.Parse(answer)} where ID = {id}";
+                if (ExecuteCommand(query, conn) == false)
+                {
+                    return false;
+                }
+            }
+
+            Console.Write("Дата постачання товару:");
+
+            answer = "";
+            answer = Console.ReadLine();
+            if (answer != "")
+            {
+                query = $"update Products Set Date = '{answer}' where ID = {id}";
+                if (ExecuteCommand(query, conn) == false)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        static bool UpdateProductType(SqlConnection conn)
+        {
+            Console.WriteLine("Введiть ID типу товару який хочете змiнити");
+            int id = int.Parse(Console.ReadLine());
+
+            Console.WriteLine("Введiть оновлену назву");
+            string newName = Console.ReadLine();
+
+            string query = $"update TypesOfProducts set Name = '{newName}' where ID = {id}";
+
+            return ExecuteCommand(query , conn);
+        }
+        static bool UpdateManufacturer(SqlConnection conn)
+        {
+            Console.WriteLine("Введiть ID постачальника якого хочете змiнити");
+            int id = int.Parse(Console.ReadLine());
+
+            Console.WriteLine("Введiть оновлену назву");
+            string newName = Console.ReadLine();
+
+            string query = $"update Manufacturers set Name = '{newName}' where ID = {id}";
+
+            return ExecuteCommand(query, conn);
+        }
+        static bool DeleteProduct(SqlConnection conn)
+        {
+            Console.WriteLine("Введiть ID товару який хочете видалити");
+            int id = int.Parse(Console.ReadLine());
+
+            string query = $"delete from Products where ID = {id}";
+
+            return ExecuteCommand(query, conn);
+        }
+        static bool DeleteProductType(SqlConnection conn)
+        {
+            Console.WriteLine("Введiть ID типу товару який хочете видалити");
+            int id = int.Parse(Console.ReadLine());
+
+            string query = $"delete from TypesOfProducts where ID = {id}";
+
+            return ExecuteCommand(query, conn);
+        }
+        static bool DeleteManufacturer(SqlConnection conn)
+        {
+            Console.WriteLine("Введiть ID постачальника якого хочете видалити");
+            int id = int.Parse(Console.ReadLine());
+
+            string query = $"delete from Manufacturers where ID = {id}";
+
+            return ExecuteCommand(query, conn);
+        }
+        static bool ExecuteCommand(string query, SqlConnection conn)
+        {
+            try
+            {
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    Console.WriteLine(cmd.ExecuteNonQuery());
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
             }
         }
         static DataSet GetData(string query, DataSet ds, SqlConnection conn)
@@ -162,28 +463,45 @@ namespace Warehouse
 
         static void DisplayProducts(DataTable dataTable)
         {
-            Console.WriteLine($"{"ID".PadRight(5)}{"Назва товару".PadRight(20)}{"Тип товару".PadRight(15)}{"Постачальник".PadRight(20)}{"Кількість".PadRight(10)}{"Собівартість".PadRight(15)}{"Дата постачання"}");
+            Console.WriteLine($"{"ID".PadRight(7)}{"Назва товару".PadRight(20)}{"Тип товару".PadRight(15)}{"Постачальник".PadRight(20)}{"Кiлькiсть".PadRight(10)}{"Собiвартiсть".PadRight(15)}{"Дата постачання"}");
             foreach (DataRow row in dataTable.Rows)
             {
-                Console.WriteLine($"{row["ID"].ToString().PadRight(5)}{row["Name"].ToString().PadRight(20)}{row["TypeID"].ToString().PadRight(15)}{row["ManufacturerID"].ToString().PadRight(20)}{row["Number"].ToString().PadRight(10)}{row["CostPrice"].ToString().PadRight(15)}{row["Date"]}");
+                Console.WriteLine($"{row["ID"].ToString().PadRight(7)}{row["Name"].ToString().PadRight(20)}{row["TypeID"].ToString().PadRight(15)}{row["ManufacturerID"].ToString().PadRight(20)}{row["Number"].ToString().PadRight(10)}{row["CostPrice"].ToString().PadRight(15)}{row["Date"]}");
             }
         }
 
         static void DisplayTypes(DataTable dataTable)
         {
-            Console.WriteLine("Типи товарів:");
+            Console.WriteLine($"{"ID".PadRight(7)}Тип");
             foreach (DataRow row in dataTable.Rows)
             {
-                Console.WriteLine(row["Name"]);
+                Console.WriteLine($"{row["ID"].ToString().PadRight(7)}{row["Name"]}");
             }
         }
 
-        static void DisplaySuppliers(DataTable dataTable)
+        static void DisplayManufacturers(DataTable dataTable)
         {
-            Console.WriteLine("Постачальники:");
+            Console.WriteLine($"{"ID".PadRight(7)}Постачальник");
             foreach (DataRow row in dataTable.Rows)
             {
-                Console.WriteLine(row["Name"]);
+                Console.WriteLine($"{row["ID"].ToString().PadRight(7)}{row["Name"]}");
+            }
+        }
+
+        static void DisplayManufacturerQuantity(DataTable dataTable)
+        {
+            Console.WriteLine($"{"Manufacturer".PadRight(20)}Total quantity");
+            foreach (DataRow row in dataTable.Rows)
+            {
+                Console.WriteLine($"{row["Manufacturer"].ToString().PadRight(20)}{row["TotalQuantity"]}");
+            }
+        }
+        static void DisplayTypeQuantity(DataTable dataTable)
+        {
+            Console.WriteLine($"{"Type".PadRight(20)}Total quantity");
+            foreach (DataRow row in dataTable.Rows)
+            {
+                Console.WriteLine($"{row["ProductType"].ToString().PadRight(20)}{row["TotalQuantity"]}");
             }
         }
     }
