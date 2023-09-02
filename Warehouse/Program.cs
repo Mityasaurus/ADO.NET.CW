@@ -7,6 +7,9 @@ namespace Warehouse
     internal class Program
     {
         private static string ConnString => ConfigurationManager.ConnectionStrings["DefaultConnection"].ToString();
+        private static Dictionary<string, List<string>> Products = new Dictionary<string, List<string>>();
+        private static Dictionary<string, List<string>> Types = new Dictionary<string, List<string>>();
+        private static Dictionary<string, List<string>> Manufacturers = new Dictionary<string, List<string>>();
         static void Main(string[] args)
         {
             try
@@ -72,6 +75,10 @@ namespace Warehouse
                     SqlDataAdapter adapter = new SqlDataAdapter();
                     DataSet ds = new DataSet();
 
+                    GetAllValues(conn, "Products", Products);
+                    GetAllValues(conn, "TypesOfProducts", Types);
+                    GetAllValues(conn, "Manufacturers", Manufacturers);
+
                     int choice = -1;
                     while (choice != 0)
                     {
@@ -110,45 +117,39 @@ namespace Warehouse
                         switch (choice)
                         {
                             case 1: Console.Clear();
-                                query = "select * from Products as p, Manufacturers as m, TypesOfProducts as t where p.TypeID=t.ID and p.ManufacturerID=m.ID";
-                                GetData(query, ds, conn);
-                                DisplayProducts(ds.Tables[0]);
+                                Display(Products);
                                 break;
                             case 2:
                                 Console.Clear();
-                                query = "SELECT * from TypesOfProducts";
-                                GetData(query, ds, conn);
-                                DisplayTypes(ds.Tables[0]);
+                                Display(Types);
                                 break;
                             case 3:
                                 Console.Clear();
-                                query = "select * from Manufacturers";
-                                GetData(query, ds, conn);
-                                DisplayManufacturers(ds.Tables[0]);
+                                Display(Manufacturers);
                                 break;
                             case 4:
                                 Console.Clear();
                                 query = "SELECT TOP 1 * FROM Products ORDER BY Number DESC";
                                 GetData(query, ds, conn);
-                                DisplayProducts(ds.Tables[0]);
+                                //DisplayProducts(ds.Tables[0]);
                                 break;
                             case 5:
                                 Console.Clear();
                                 query = "SELECT TOP 1 * FROM Products ORDER BY Number ASC";
                                 GetData(query, ds, conn);
-                                DisplayProducts(ds.Tables[0]);
+                               //DisplayProducts(ds.Tables[0]);
                                 break;
                             case 6:
                                 Console.Clear();
                                 query = "SELECT TOP 1 * FROM Products ORDER BY CostPrice ASC";
                                 GetData(query, ds, conn);
-                                DisplayProducts(ds.Tables[0]);
+                                //DisplayProducts(ds.Tables[0]);
                                 break;
                             case 7:
                                 Console.Clear();
                                 query = "SELECT TOP 1 * FROM Products ORDER BY CostPrice DESC";
                                 GetData(query, ds, conn);
-                                DisplayProducts(ds.Tables[0]);
+                                //DisplayProducts(ds.Tables[0]);
                                 break;
                             case 8:
                                 Console.Clear();
@@ -230,7 +231,7 @@ namespace Warehouse
 
                                 query = $"SELECT P.* FROM Products P WHERE DATEDIFF(DAY, P.Date, GETDATE()) > {days}";
                                 GetData(query, ds, conn);
-                                DisplayProducts(ds.Tables[0]);
+                                //DisplayProducts(ds.Tables[0]);
                                 break;
                             case 0:
                                 break;
@@ -248,6 +249,60 @@ namespace Warehouse
                 Console.WriteLine(ex.Message);
             }
         }
+
+        private static string GetSelectQuery(string tbName) =>
+            $"select * from {tbName}";
+        private static List<string> GetTableNames(SqlConnection sqlConnection, params string[] name)
+        {
+            var tables = new List<string>();
+
+            if (name.Length > 0)
+            {
+                foreach (DataRow dr in sqlConnection.GetSchema("Tables").Rows)
+                {
+                    if (name.Contains(dr[2].ToString()))
+                    {
+                        tables.Add($"[{dr[1]}].[{dr[2]}]");
+                    }
+                }
+            }
+            else
+            {
+                foreach (DataRow dr in sqlConnection.GetSchema("Tables").Rows)
+                {
+                    tables.Add($"[{dr[1]}].[{dr[2]}]");
+                }
+            }
+
+            return tables;
+        }
+        private static Dictionary<string, List<string>> GetAllValues(SqlConnection sqlConnection, string tbName, Dictionary<string, List<string>> dict)
+        {
+            var tables = GetTableNames(sqlConnection, tbName);
+            
+
+            using (SqlCommand cmd = new SqlCommand(GetSelectQuery(tables[0]), sqlConnection))
+            {
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    for (int i = 0; i < reader.FieldCount; i++)
+                    {
+                        dict.Add(reader.GetName(i), new List<string>());
+                    }
+
+                        while (reader.Read())
+                        {
+                            foreach(var key in dict.Keys)
+                            {
+                                dict[$"{key}"].Add(reader[$"{key}"].ToString());
+                            }
+                        }
+                    
+                }
+            }
+            return dict;
+        }
+
         static bool AddNewProduct(SqlConnection conn)
         {
             Console.WriteLine("Введiть назву нового товару");
@@ -461,12 +516,20 @@ namespace Warehouse
             return new DataSet();
         }
 
-        static void DisplayProducts(DataTable dataTable)
+        static void Display(Dictionary<string, List<string>> dict)
         {
-            Console.WriteLine($"{"ID".PadRight(7)}{"Назва товару".PadRight(20)}{"Тип товару".PadRight(15)}{"Постачальник".PadRight(20)}{"Кiлькiсть".PadRight(10)}{"Собiвартiсть".PadRight(15)}{"Дата постачання"}");
-            foreach (DataRow row in dataTable.Rows)
+            foreach(var key in dict.Keys)
             {
-                Console.WriteLine($"{row["ID"].ToString().PadRight(7)}{row["Name"].ToString().PadRight(20)}{row["TypeID"].ToString().PadRight(15)}{row["ManufacturerID"].ToString().PadRight(20)}{row["Number"].ToString().PadRight(10)}{row["CostPrice"].ToString().PadRight(15)}{row["Date"]}");
+                Console.Write($"{key.PadRight(20)}");
+            }
+            Console.WriteLine();
+            for(int i = 0; i < dict["ID"].Count; i++)
+            {
+                foreach (var key in dict.Keys)
+                {
+                    Console.Write(dict[$"{key}"][i].PadRight(20));
+                }
+                Console.WriteLine();
             }
         }
 
