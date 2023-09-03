@@ -1,6 +1,7 @@
 ﻿using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using System.Threading.Channels;
 
 namespace Warehouse
 {
@@ -75,9 +76,7 @@ namespace Warehouse
                     SqlDataAdapter adapter = new SqlDataAdapter();
                     DataSet ds = new DataSet();
 
-                    GetAllValues(conn, "Products", Products);
-                    GetAllValues(conn, "TypesOfProducts", Types);
-                    GetAllValues(conn, "Manufacturers", Manufacturers);
+                    UpdateData(conn, new string[] { "Products", "TypesOfProducts", "Manufacturers" }, Products, Types, Manufacturers);
 
                     int choice = -1;
                     while (choice != 0)
@@ -88,8 +87,8 @@ namespace Warehouse
                         Console.WriteLine("3 - Вiдображення всiх постачальникiв");
                         Console.WriteLine("4 - Показати товар з максимальною кiлькiстю");
                         Console.WriteLine("5 - Показати товар з мiнiмальною кiлькiстю");
-                        Console.WriteLine("6 - Показати товар з мiнiмальною собiвартiстю");
-                        Console.WriteLine("7 - Показати товар з максимальною собiвартiстю");
+                        Console.WriteLine("6 - Показати товар з максимальною собiвартiстю");
+                        Console.WriteLine("7 - Показати товар з мiнiмальною собiвартiстю");
                         Console.WriteLine();
                         Console.WriteLine("8 - Додати новий товар");
                         Console.WriteLine("9 - Додати новий тип товару");
@@ -108,6 +107,11 @@ namespace Warehouse
                         Console.WriteLine("19 - Показати iнформацiю про тип товару з найбiльшою кiлькiстю товарiв на складi");
                         Console.WriteLine("20 - Показати iнформацiю про тип товару з найменшою кiлькiстю товарiв на складi");
                         Console.WriteLine("21 - Показати товари, з постачання яких минула задана кiлькiсть днiв");
+                        Console.WriteLine();
+                        Console.WriteLine("22 - Показати товари заданої категорiї");
+                        Console.WriteLine("23  - Показати товари заданого постачальника");
+                        Console.WriteLine("24  - Показати товар, який знаходиться на складi найдовше з усiх");
+                        Console.WriteLine("25 - Показати середню кiлькiсть товарiв за кожним типом товару");
                         Console.WriteLine();
                         Console.WriteLine("0 - Вихiд");
 
@@ -129,63 +133,64 @@ namespace Warehouse
                                 break;
                             case 4:
                                 Console.Clear();
-                                query = "SELECT TOP 1 * FROM Products ORDER BY Number DESC";
-                                GetData(query, ds, conn);
-                                //DisplayProducts(ds.Tables[0]);
+                                Display(GetProductMaxNumber());
                                 break;
                             case 5:
                                 Console.Clear();
-                                query = "SELECT TOP 1 * FROM Products ORDER BY Number ASC";
-                                GetData(query, ds, conn);
-                               //DisplayProducts(ds.Tables[0]);
+                                Display(GetProductMinNumber());
                                 break;
                             case 6:
                                 Console.Clear();
-                                query = "SELECT TOP 1 * FROM Products ORDER BY CostPrice ASC";
-                                GetData(query, ds, conn);
-                                //DisplayProducts(ds.Tables[0]);
+                                Display(GetProductMaxCostPrice());
                                 break;
                             case 7:
                                 Console.Clear();
-                                query = "SELECT TOP 1 * FROM Products ORDER BY CostPrice DESC";
-                                GetData(query, ds, conn);
-                                //DisplayProducts(ds.Tables[0]);
+                                Display(GetProductMinCostPrice());
                                 break;
                             case 8:
                                 Console.Clear();
                                 AddNewProduct(conn);
+                                UpdateData(conn, new string[] { "Products" }, Products);
                                 break;
                             case 9:
                                 Console.Clear();
                                 AddNewProductType(conn);
+                                UpdateData(conn, new string[] { "TypesOfProducts" }, Types);
                                 break;
                             case 10:
                                 Console.Clear();
                                 AddNewProductManufacturer(conn);
+                                UpdateData(conn, new string[] { "Manufacturers" }, Manufacturers);
                                 break;
                             case 11:
                                 Console.Clear();
                                 UpdateProduct(conn);
+                                UpdateData(conn, new string[] { "Products" }, Products);
                                 break;
                             case 12:
                                 Console.Clear();
                                 UpdateProductType(conn);
+                                UpdateData(conn, new string[] { "TypesOfProducts" }, Types);
                                 break;
                             case 13:
                                 Console.Clear();
                                 UpdateManufacturer(conn);
+                                UpdateData(conn, new string[] { "Manufacturers" }, Manufacturers);
                                 break;
                             case 14:
                                 Console.Clear();
                                 DeleteProduct(conn);
+                                UpdateData(conn, new string[] { "Products" }, Products);
                                 break;
                             case 15:
                                 Console.Clear();
                                 DeleteProductType(conn);
+                                UpdateData(conn, new string[] { "Products", "TypesOfProducts" }, Products, Types);
                                 break;
                             case 16:
                                 Console.Clear();
                                 DeleteManufacturer(conn);
+                                UpdateData(conn, new string[] { "Products", "Manufacturers" }, Products, Manufacturers);
                                 break;
                             case 17:
                                 Console.Clear();
@@ -231,7 +236,29 @@ namespace Warehouse
 
                                 query = $"SELECT P.* FROM Products P WHERE DATEDIFF(DAY, P.Date, GETDATE()) > {days}";
                                 GetData(query, ds, conn);
-                                //DisplayProducts(ds.Tables[0]);
+                                DisplayProducts(ds.Tables[0]);
+                                break;
+                            case 22:
+                                Console.Clear();
+                                Console.WriteLine("Введiть бажану категорiю");
+
+                                string type = Console.ReadLine();
+                                Display(GetProductCertainType(type));
+                                break;
+                            case 23:
+                                Console.Clear();
+                                Console.WriteLine("Введiть бажаного постачальника");
+
+                                string manufacturer = Console.ReadLine();
+                                Display(GetProductCertainManufacturer(manufacturer));
+                                break;
+                            case 24:
+                                Console.Clear();
+                                Display(GetProductOldestDate());
+                                break;
+                            case 25:
+                                Console.Clear();
+                                Display(GetAverageProductNumberByType());
                                 break;
                             case 0:
                                 break;
@@ -250,6 +277,21 @@ namespace Warehouse
             }
         }
 
+        private static void UpdateData(SqlConnection conn, string[] tbNames, params Dictionary<string, List<string>>[] tables)
+        {
+            try
+            {
+                for(int i = 0; i < tables.Length; i++)
+                {
+                    tables[i].Clear();
+                    GetAllValues(conn, tbNames[i], tables[i]);
+                }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
         private static string GetSelectQuery(string tbName) =>
             $"select * from {tbName}";
         private static List<string> GetTableNames(SqlConnection sqlConnection, params string[] name)
@@ -302,6 +344,130 @@ namespace Warehouse
             }
             return dict;
         }
+        private static Dictionary<string, List<string>> GetProductMaxNumber()
+        {
+            int maxNumber = Products["Number"].Select(num => int.Parse(num)).Max();
+
+            return GetProductWith("Number", maxNumber.ToString());
+        }
+        private static Dictionary<string, List<string>> GetProductMinNumber()
+        {
+            int minNumber = Products["Number"].Select(num => int.Parse(num)).Min();
+
+            return GetProductWith("Number", minNumber.ToString());
+        }
+        private static Dictionary<string, List<string>> GetProductMaxCostPrice()
+        {
+            int maxNumber = Products["CostPrice"].Select(num => int.Parse(num)).Max();
+
+            return GetProductWith("CostPrice", maxNumber.ToString());
+        }
+        private static Dictionary<string, List<string>> GetProductMinCostPrice()
+        {
+            int minNumber = Products["CostPrice"].Select(num => int.Parse(num)).Min();
+
+            return GetProductWith("CostPrice", minNumber.ToString());
+        }
+        private static Dictionary<string, List<string>> GetProductCertainType(string type)
+        {
+            string id = "";
+
+            for(int i = 0; i < Types["Name"].Count; i++)
+            {
+                if (Types["Name"][i] == type)
+                {
+                    id = Types["ID"][i];
+                    break;
+                }
+            }
+
+            return GetProductWith("TypeID", id);
+        }
+        private static Dictionary<string, List<string>> GetProductCertainManufacturer(string type)
+        {
+            string id = "";
+
+            for (int i = 0; i < Manufacturers["Name"].Count; i++)
+            {
+                if (Manufacturers["Name"][i] == type)
+                {
+                    id = Manufacturers["ID"][i];
+                    break;
+                }
+            }
+
+            return GetProductWith("ManufacturerID", id);
+        }
+        private static Dictionary<string, List<string>> GetProductOldestDate()
+        {
+            DateTime date = Products["Date"].Select(d => DateTime.Parse(d)).Min();
+
+            return GetProductWith("Date", date.ToString());
+        }
+        private static Dictionary<string, List<string>> GetAverageProductNumberByType()
+        {
+            var result = new Dictionary<string, List<string>>
+            {
+                { "Type", new List<string>() },
+                { "Average number", new List<string>() }
+            };
+
+            for(int i = 0; i < Types["Name"].Count; i++)
+            {
+                var type = Types["Name"][i];
+                var id = Types["ID"][i];
+
+                int counter = 0;
+                int summ = 0;
+
+                for(int j = 0; j < Products["TypeID"].Count; j++)
+                {
+                    var prTypeId = Products["TypeID"][j];
+
+                    if (prTypeId == id)
+                    {
+                        summ += int.Parse(Products["Number"][j]);
+                        counter++;
+                    }
+                }
+
+                summ = counter != 0 ? summ /= counter : 0;
+
+                result["Type"].Add(type);
+                result["Average number"].Add(summ.ToString());
+            }
+
+            return result;
+        }
+        private static Dictionary<string, List<string>> GetProductWith(string columnName, string value)
+        {
+            var result = new Dictionary<string, List<string>>();
+            try
+            {
+                foreach (var key in Products.Keys)
+                {
+                    result.Add(key, new List<string>());
+                }
+
+                for (int i = 0; i < Products["ID"].Count; i++)
+                {
+                    if (Products[columnName][i] == value.ToString())
+                    {
+                        foreach (var key in Products.Keys)
+                        {
+                            result[key].Add(Products[key][i]);
+                        }
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            return result;
+
+        }
 
         static bool AddNewProduct(SqlConnection conn)
         {
@@ -347,6 +513,7 @@ namespace Warehouse
             return ExecuteCommand(query, conn);
 
         }
+
         static bool UpdateProduct(SqlConnection conn)
         {
             Console.WriteLine("Введiть ID товару який хочете змiнити");
@@ -459,6 +626,7 @@ namespace Warehouse
 
             return ExecuteCommand(query, conn);
         }
+
         static bool DeleteProduct(SqlConnection conn)
         {
             Console.WriteLine("Введiть ID товару який хочете видалити");
@@ -486,6 +654,7 @@ namespace Warehouse
 
             return ExecuteCommand(query, conn);
         }
+
         static bool ExecuteCommand(string query, SqlConnection conn)
         {
             try
@@ -502,6 +671,7 @@ namespace Warehouse
                 return false;
             }
         }
+
         static DataSet GetData(string query, DataSet ds, SqlConnection conn)
         {
             SqlDataAdapter adapter = new SqlDataAdapter(query, conn);
@@ -523,7 +693,7 @@ namespace Warehouse
                 Console.Write($"{key.PadRight(20)}");
             }
             Console.WriteLine();
-            for(int i = 0; i < dict["ID"].Count; i++)
+            for(int i = 0; i < dict[dict.Keys.First()].Count; i++)
             {
                 foreach (var key in dict.Keys)
                 {
@@ -532,25 +702,6 @@ namespace Warehouse
                 Console.WriteLine();
             }
         }
-
-        static void DisplayTypes(DataTable dataTable)
-        {
-            Console.WriteLine($"{"ID".PadRight(7)}Тип");
-            foreach (DataRow row in dataTable.Rows)
-            {
-                Console.WriteLine($"{row["ID"].ToString().PadRight(7)}{row["Name"]}");
-            }
-        }
-
-        static void DisplayManufacturers(DataTable dataTable)
-        {
-            Console.WriteLine($"{"ID".PadRight(7)}Постачальник");
-            foreach (DataRow row in dataTable.Rows)
-            {
-                Console.WriteLine($"{row["ID"].ToString().PadRight(7)}{row["Name"]}");
-            }
-        }
-
         static void DisplayManufacturerQuantity(DataTable dataTable)
         {
             Console.WriteLine($"{"Manufacturer".PadRight(20)}Total quantity");
@@ -565,6 +716,14 @@ namespace Warehouse
             foreach (DataRow row in dataTable.Rows)
             {
                 Console.WriteLine($"{row["ProductType"].ToString().PadRight(20)}{row["TotalQuantity"]}");
+            }
+        }
+        static void DisplayProducts(DataTable dataTable)
+        {
+            Console.WriteLine($"{"ID".PadRight(20)}{"Name".PadRight(20)}{"TypeID".PadRight(20)}{"ManufacturerID".PadRight(20)}{"Number".PadRight(20)}{"CostPrice".PadRight(20)}Date");
+            foreach (DataRow row in dataTable.Rows)
+            {
+                Console.WriteLine($"{row["ID"].ToString().PadRight(20)}{row["Name"].ToString().PadRight(20)}{row["TypeID"].ToString().PadRight(20)}{row["ManufacturerID"].ToString().PadRight(20)}{row["Number"].ToString().PadRight(20)}{row["CostPrice"].ToString().PadRight(20)}{row["Date"].ToString().PadRight(20)}");
             }
         }
     }
