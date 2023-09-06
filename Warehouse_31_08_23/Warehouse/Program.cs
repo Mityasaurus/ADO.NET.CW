@@ -19,7 +19,6 @@ namespace Warehouse
                 {
                     conn.Open();
                     Console.WriteLine("Connection success");
-                    Console.WriteLine("Test string");
 
                     Console.WriteLine("Do you want to create tables [Y/N]");
                     string isTableCreated = Console.ReadLine();
