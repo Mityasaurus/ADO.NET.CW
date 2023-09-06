@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "2sva+9kjGXfPJm1tAPWUIJ+ijTL9wSswggfmTRWCjWw92Mz4vpY0xY8qvRf6U01OO1+A0SCVIXnlBC10o4CYKg==",
+  "dgSpecHash": "XUOjQBhPB1GkCtuSMd7nvOO5kvdkH9HFZ8TBUN9rK1TpH7poF/jKm6Yyo99bEqgJI2hfOr3tvv7KIEEczsMNwg==",
   "success": true,
-  "projectFilePath": "E:\\Шаг\\Домашки\\ADO.NET\\Классные работы\\9\\[--02.09.23.CW--]\\ADO.NET.31.08.23.CW\\Warehouse\\Warehouse.csproj",
+  "projectFilePath": "E:\\Шаг\\Домашки\\ADO.NET\\Классные работы\\9\\[--02.09.23.CW--]\\ADO.NET.31.08.23.CW\\Warehouse_31_08_23\\Warehouse\\Warehouse.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Admin\\.nuget\\packages\\microsoft.netcore.platforms\\3.1.0\\microsoft.netcore.platforms.3.1.0.nupkg.sha512",
     "C:\\Users\\Admin\\.nuget\\packages\\microsoft.win32.registry\\4.7.0\\microsoft.win32.registry.4.7.0.nupkg.sha512",

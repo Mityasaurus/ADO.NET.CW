@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "E:\\Шаг\\Домашки\\ADO.NET\\Классные работы\\9\\[--02.09.23.CW--]\\ADO.NET.31.08.23.CW\\Warehouse\\Warehouse.csproj": {}
+    "E:\\Шаг\\Домашки\\ADO.NET\\Классные работы\\9\\[--02.09.23.CW--]\\ADO.NET.31.08.23.CW\\Warehouse_31_08_23\\Warehouse\\Warehouse.csproj": {}
   },
   "projects": {
-    "E:\\Шаг\\Домашки\\ADO.NET\\Классные работы\\9\\[--02.09.23.CW--]\\ADO.NET.31.08.23.CW\\Warehouse\\Warehouse.csproj": {
+    "E:\\Шаг\\Домашки\\ADO.NET\\Классные работы\\9\\[--02.09.23.CW--]\\ADO.NET.31.08.23.CW\\Warehouse_31_08_23\\Warehouse\\Warehouse.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\Шаг\\Домашки\\ADO.NET\\Классные работы\\9\\[--02.09.23.CW--]\\ADO.NET.31.08.23.CW\\Warehouse\\Warehouse.csproj",
+        "projectUniqueName": "E:\\Шаг\\Домашки\\ADO.NET\\Классные работы\\9\\[--02.09.23.CW--]\\ADO.NET.31.08.23.CW\\Warehouse_31_08_23\\Warehouse\\Warehouse.csproj",
         "projectName": "Warehouse",
-        "projectPath": "E:\\Шаг\\Домашки\\ADO.NET\\Классные работы\\9\\[--02.09.23.CW--]\\ADO.NET.31.08.23.CW\\Warehouse\\Warehouse.csproj",
+        "projectPath": "E:\\Шаг\\Домашки\\ADO.NET\\Классные работы\\9\\[--02.09.23.CW--]\\ADO.NET.31.08.23.CW\\Warehouse_31_08_23\\Warehouse\\Warehouse.csproj",
         "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "E:\\Шаг\\Домашки\\ADO.NET\\Классные работы\\9\\[--02.09.23.CW--]\\ADO.NET.31.08.23.CW\\Warehouse\\obj\\",
+        "outputPath": "E:\\Шаг\\Домашки\\ADO.NET\\Классные работы\\9\\[--02.09.23.CW--]\\ADO.NET.31.08.23.CW\\Warehouse_31_08_23\\Warehouse\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
